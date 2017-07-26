@@ -49,7 +49,6 @@
 #include "main.h"
 #include "stm32f0xx_hal.h"
 #include "usb_device.h"
-#include "stdio.h"
 
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
@@ -57,6 +56,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc;
+DMA_HandleTypeDef hdma_adc;
 
 DAC_HandleTypeDef hdac;
 
@@ -67,12 +67,13 @@ I2C_HandleTypeDef hi2c2;
 uint8_t HiMsg[] = "hello\r\n";
 uint8_t buffer_to_send[64];
 uint8_t receive_data[64];
-
+uint32_t ADCReadings[10]; //ADC Readings
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_ADC_Init(void);
 static void MX_DAC_Init(void);
 static void MX_I2C2_Init(void);
@@ -113,6 +114,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_ADC_Init();
   MX_DAC_Init();
   MX_I2C2_Init();
@@ -120,8 +122,11 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
 	HAL_DAC_Start(&hdac,DAC_CHANNEL_1);
-	HAL_ADC_Start(&hadc);
-	HAL_ADC_PollForConversion(&hadc,10); 
+//	HAL_ADC_Start(&hadc);
+//	HAL_ADC_PollForConversion(&hadc,10); 
+
+  HAL_ADC_Start(&hadc);
+	HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADCReadings, 10);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -142,7 +147,9 @@ int main(void)
 		HAL_Delay(5);
 		
 		// ADC
-		adc_temp = Get_Adc(1);
+		// adc_temp = Get_Adc(1);
+		adc_temp = ADCReadings[0];
+		
 		ADC_value = (float)adc_temp * ADC_TO_VALTAGE;
 		
 		// CDC_Transmit_FS(HiMsg,strlen((const char*)HiMsg));
@@ -157,28 +164,6 @@ int main(void)
 
 }
 
-
-
-uint16_t Get_Adc(uint16_t ch)   
-{
-    ADC_ChannelConfTypeDef ADC1_ChanConf;
-
-    ADC1_ChanConf.Channel 		 = ch;                                   //通道
-    ADC1_ChanConf.Rank 	  		 = ADC_RANK_CHANNEL_NUMBER;                                       //1个序列
-    ADC1_ChanConf.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;        //采样时间
-
-		if (HAL_ADC_ConfigChannel(&hadc, &ADC1_ChanConf) != HAL_OK)
-		{
-			_Error_Handler(__FILE__, __LINE__);
-		}
-    HAL_ADC_Start(&hadc);                               //开启ADC
-    HAL_ADC_PollForConversion(&hadc, 10);                //轮询转换
-
-	return (uint16_t)HAL_ADC_GetValue(&hadc);	            //返回最近一次ADC1规则组的转换结果
-}
-
-
-
 /** System Clock Configuration
 */
 void SystemClock_Config(void)
@@ -190,13 +175,10 @@ void SystemClock_Config(void)
 
     /**Initializes the CPU, AHB and APB busses clocks 
     */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSI14
-                              |RCC_OSCILLATORTYPE_HSI48;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSI48;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
-  RCC_OscInitStruct.HSI14State = RCC_HSI14_ON;
   RCC_OscInitStruct.HSICalibrationValue = 16;
-  RCC_OscInitStruct.HSI14CalibrationValue = 16;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL6;
@@ -248,7 +230,7 @@ static void MX_ADC_Init(void)
     /**Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
     */
   hadc.Instance = ADC1;
-  hadc.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+  hadc.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc.Init.Resolution = ADC_RESOLUTION_12B;
   hadc.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc.Init.ScanConvMode = ADC_SCAN_DIRECTION_FORWARD;
@@ -259,7 +241,7 @@ static void MX_ADC_Init(void)
   hadc.Init.DiscontinuousConvMode = DISABLE;
   hadc.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
-  hadc.Init.DMAContinuousRequests = DISABLE;
+  hadc.Init.DMAContinuousRequests = ENABLE;
   hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
   if (HAL_ADC_Init(&hadc) != HAL_OK)
   {
@@ -271,22 +253,6 @@ static void MX_ADC_Init(void)
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = ADC_RANK_CHANNEL_NUMBER;
   sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
-  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-    /**Configure for the selected ADC regular channel to be converted. 
-    */
-  sConfig.Channel = ADC_CHANNEL_2;
-  if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-    /**Configure for the selected ADC regular channel to be converted. 
-    */
-  sConfig.Channel = ADC_CHANNEL_3;
   if (HAL_ADC_ConfigChannel(&hadc, &sConfig) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -313,13 +279,6 @@ static void MX_DAC_Init(void)
   sConfig.DAC_Trigger = DAC_TRIGGER_NONE;
   sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
   if (HAL_DAC_ConfigChannel(&hdac, &sConfig, DAC_CHANNEL_1) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-    /**DAC channel OUT2 config 
-    */
-  if (HAL_DAC_ConfigChannel(&hdac, &sConfig, DAC_CHANNEL_2) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
@@ -357,6 +316,21 @@ static void MX_I2C2_Init(void)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
+
+}
+
+/** 
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void) 
+{
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 
 }
 
@@ -399,7 +373,23 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+uint16_t Get_Adc(uint16_t ch)   
+{
+    ADC_ChannelConfTypeDef ADC1_ChanConf;
 
+    ADC1_ChanConf.Channel 		 = ch;                                   //通道
+    ADC1_ChanConf.Rank 	  		 = ADC_RANK_CHANNEL_NUMBER;                                       //1个序列
+    ADC1_ChanConf.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;        //采样时间
+
+		if (HAL_ADC_ConfigChannel(&hadc, &ADC1_ChanConf) != HAL_OK)
+		{
+			_Error_Handler(__FILE__, __LINE__);
+		}
+    HAL_ADC_Start(&hadc);                               //开启ADC
+    HAL_ADC_PollForConversion(&hadc, 10);                //轮询转换
+
+	return (uint16_t)HAL_ADC_GetValue(&hadc);	            //返回最近一次ADC1规则组的转换结果
+}
 /* USER CODE END 4 */
 
 /**
