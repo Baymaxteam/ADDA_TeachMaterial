@@ -52,6 +52,7 @@
 
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
+#include "key.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -72,6 +73,8 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN 0 */
 uint16_t ADCReadings[2]; //ADC Readings
+uint16_t ADCReadings_Bitshift; //ADC Readings
+uint16_t ADCReadings_Filter; //ADC Readings
 /* USER CODE END 0 */
 
 int main(void)
@@ -99,7 +102,7 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
 	char kMsg[200];
-	
+	uint8_t Key_mode = 0;
 	
   /* USER CODE END 2 */
 
@@ -107,8 +110,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+		Key_mode = KEY_Scan(&ADC_Setting, 1);
+		
 		HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADCReadings, 2);//start the DMA collecting the data
-		sprintf(kMsg,"%d, %d\n", ADCReadings[0], ADCReadings[1]);
+		ADCReadings_Bitshift = ADC_Bitshift(&ADC_Setting, (uint16_t)ADCReadings[0]);
+		ADCReadings_Filter	 = ADC_Filter_Output(&ADC_Setting , ADCReadings_Bitshift);
+		
+		sprintf(kMsg,"A:%d, %d, %d M: %d %d %d %d\n", ADCReadings[0], ADCReadings_Bitshift, ADCReadings_Filter, 
+															Key_mode, ADC_Setting.ADC_clock, ADC_Setting.ADC_bit, ADC_Setting.ADC_filter);
 		if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
 		HAL_Delay(500);
 		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
