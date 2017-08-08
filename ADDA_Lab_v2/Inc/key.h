@@ -50,16 +50,20 @@ enum ADC_filter_setting
 typedef struct ADDA_Setting_s
 {
     uint8_t ADC_clock;
-    uint8_t ADC_bit ;
+		uint8_t ADC_pre_clock;
+    uint8_t ADC_bit;
     uint8_t ADC_filter;
+		uint8_t ADC_clock_change;
 
 } ADDA_Setting_t;
 
 static ADDA_Setting_t ADC_Setting =
 {
-    .ADC_clock  = CLOCK_20K,
-    .ADC_bit    = BIT12,
-    .ADC_filter = FILTER_None
+    .ADC_clock  				= CLOCK_1K,
+	  .ADC_pre_clock  		= CLOCK_1K,
+    .ADC_bit    				= BIT12,
+    .ADC_filter 				= FILTER_None,
+	  .ADC_clock_change   = 0
 };
 
 uint8_t KEY_Scan(ADDA_Setting_t* ADCLab, uint8_t mode);

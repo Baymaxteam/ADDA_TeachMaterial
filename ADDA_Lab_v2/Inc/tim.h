@@ -72,7 +72,7 @@ extern void _Error_Handler(char *, int);
 void MX_TIM2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-
+void MX_TIM2_ReInit(uint16_t TIM_Prescaler ,uint16_t TIM_Period);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

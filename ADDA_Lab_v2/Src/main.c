@@ -65,7 +65,9 @@
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+static uint32_t sys_counter = 0;
+static uint32_t print_counter = 0;
+static uint32_t print_counter_limit = 1000/2; // 20k counter / 2 = 500ms
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -82,14 +84,19 @@ uint16_t ADCReadings[2]; //ADC Readings
 uint16_t ADCReadings_Bitshift; //ADC Readings
 uint16_t ADCReadings_Filter; //ADC Readings
 
-#define TIM_CLOCK 				 1000 							// 1M = 1000k
-#define TIM_20k_PRESCALER (TIM_CLOCK/20)    	// 1000/20  = 50
-#define TIM_10k_PRESCALER (TIM_CLOCK/10)    	// 1000/10  = 100
-#define TIM_5k_PRESCALER  (TIM_CLOCK/5)    		// 1000/5   = 200
-#define TIM_1k_PRESCALER  (TIM_CLOCK/1)    		// 1000/1   = 1000
-#define TIM_k5_PRESCALER  (TIM_CLOCK/0.5)    // 1000/0.5 = 2000
+uint16_t DACWritings = 4096; //ADC Readings
 
 
+#define CLOCK_FREQ 		 		48000000   									// 48M 
+#define TIM_PRESCALER 		48   												// TIM_CLOCK = 48M/48 = 1M = 1000k
+#define TIM_CLOCK 				(CLOCK_FREQ/TIM_PRESCALER)	// 48M/48 = 1M = 1000k
+#define TIM_20K_PERIOD  	(TIM_CLOCK/20000)    			  // 1000k/20k  = 50
+#define TIM_10K_PERIOD  	(TIM_CLOCK/10000)    				// 1000k/10k  = 100
+#define TIM_5K_PERIOD   	(TIM_CLOCK/5000)    	  		// 1000k/5k   = 200
+#define TIM_1K_PERIOD   	(TIM_CLOCK/1000)    	 			// 1000k/1k   = 1000
+#define TIM_K5_PERIOD   	(TIM_CLOCK/500)     				// 1000k/0.5k = 2000
+
+#define LED_FLASH_COUNTER 1000
 /* USER CODE END 0 */
 
 int main(void)
@@ -123,33 +130,73 @@ int main(void)
   MX_DAC_Init();
   MX_I2C1_Init();
   MX_TIM2_Init();
-
+	
   /* Initialize interrupts */
   MX_NVIC_Init();
 
   /* USER CODE BEGIN 2 */
+	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
+	
 	HAL_TIM_Base_Start_IT(&htim2);
+	 
 	
 	char kMsg[200];
-	uint8_t Key_mode = 0;
-	
+	uint8_t  Key_mode = 0;
+	uint16_t TIM_prescale_setting = TIM_1K_PERIOD;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-		Key_mode = KEY_Scan(&ADC_Setting, 1);
-		if (Key_mode == KEY_CLOCK_PRES){
+		if(print_counter >= print_counter_limit){
+			print_counter = 0;
 			
+			Key_mode = KEY_Scan(&ADC_Setting, 1);
+			if (Key_mode == KEY_CLOCK_PRES){
+				HAL_TIM_Base_Stop_IT(&htim2);
+				// check ADC sample clock
+				switch (ADC_Setting.ADC_clock)
+				{
+					case (CLOCK_20K):
+							TIM_prescale_setting = TIM_20K_PERIOD;
+							break;
+					case (CLOCK_10K):
+							TIM_prescale_setting = TIM_10K_PERIOD;
+							break;
+					case (CLOCK_5K):
+							TIM_prescale_setting = TIM_5K_PERIOD;
+							break;
+					case (CLOCK_1K):
+							TIM_prescale_setting = TIM_1K_PERIOD;
+							break;
+					case (CLOCK_K5):
+							TIM_prescale_setting = TIM_K5_PERIOD;
+							break;
+					default:
+							break;
+					
+				}
+				print_counter_limit = 0.5 * 1000000 / (float)TIM_prescale_setting;
+				MX_TIM2_ReInit(TIM_PRESCALER, TIM_prescale_setting);
+				HAL_TIM_Base_Start_IT(&htim2);
+			}
+			
+			sprintf(kMsg,"A:%d, %d, %d M: %d %d %d %d\n", ADCReadings[0], ADCReadings_Bitshift, ADCReadings_Filter, 
+												Key_mode, ADC_Setting.ADC_clock, ADC_Setting.ADC_bit, ADC_Setting.ADC_filter);
+			if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
+	}
+		
+		if( sys_counter >= LED_FLASH_COUNTER){
+			sys_counter = 0;
+			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+			DACWritings -= 10;
+			if( DACWritings < 10){
+				DACWritings = 4096;
+			}
 		}
 		
-		sprintf(kMsg,"A:%d, %d, %d M: %d %d %d %d\n", ADCReadings[0], ADCReadings_Bitshift, ADCReadings_Filter, 
-															Key_mode, ADC_Setting.ADC_clock, ADC_Setting.ADC_bit, ADC_Setting.ADC_filter);
-		if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
-		
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-		HAL_Delay(500);
+		// HAL_Delay(500);
 		
   /* USER CODE END WHILE */
 
@@ -245,10 +292,16 @@ static void MX_NVIC_Init(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim->Instance == htim2.Instance){
+		sys_counter ++;
+		print_counter++;
 		
-		HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADCReadings, 2);//start the DMA collecting the data
+		HAL_ADC_Start_DMA(&hadc, (uint32_t*) ADCReadings, 2); //start the DMA collecting the data
 		ADCReadings_Bitshift = ADC_Bitshift(&ADC_Setting, (uint16_t)ADCReadings[0]);
 		ADCReadings_Filter	 = ADC_Filter_Output(&ADC_Setting , ADCReadings_Bitshift);
+		//HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, ADCReadings_Filter);
+		HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, (uint32_t)DACWritings);
+		
+		
 	}
 }
 

@@ -27,7 +27,16 @@ uint8_t KEY_Scan(ADDA_Setting_t* ADCLab, uint8_t mode)
         else if (KEY_CLOCK_1K_Pin == 1)     ADCLab->ADC_clock = CLOCK_1K;
         else if (KEY_CLOCK_K5_Pin == 1)     ADCLab->ADC_clock = CLOCK_K5;
 
-        return KEY_CLOCK_PRES;
+				// clock change , return 1
+				if (ADCLab->ADC_clock != ADCLab->ADC_pre_clock){
+					ADCLab->ADC_clock_change = 1;
+					ADCLab->ADC_pre_clock = ADCLab->ADC_clock;
+					return KEY_CLOCK_PRES;
+				} 
+				else {
+					return 0;
+				}
+        
     }
     else if (key_up && (KEY_BIT8_Pin == 1 || KEY_BIT10_Pin == 1 || KEY_BIT12_Pin == 1 ))
     {
