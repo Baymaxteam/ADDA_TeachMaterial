@@ -82,9 +82,9 @@ static void MX_NVIC_Init(void);
 
 /* Variable containing ADC conversions results */
 /* ADC parameters */
-#define ADCCONVERTEDVALUES_BUFFER_SIZE ((uint32_t)  2)    /* Size of array containing ADC converted values */
+#define ADCCONVERTEDVALUES_BUFFER_SIZE ((uint32_t)  1)    /* Size of array containing ADC converted values */
 __IO uint16_t   aADCxConvertedValues[ADCCONVERTEDVALUES_BUFFER_SIZE];
-
+__IO uint16_t uDAC_TEST[1] = {0};
 /* USER CODE END 0 */
 
 int main(void)
@@ -147,12 +147,26 @@ int main(void)
     /* Start Error */
     Error_Handler();
   }
+  if (HAL_TIM_Base_Start(&htim3) != HAL_OK)
+  {
+    /* Counter Enable Error */
+    Error_Handler();
+  }
+	
 	// Start DAC DMA
-	if (HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)aADCxConvertedValues, ADCCONVERTEDVALUES_BUFFER_SIZE, DAC_ALIGN_12B_R) != HAL_OK)
+	//if (HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)aADCxConvertedValues, ADCCONVERTEDVALUES_BUFFER_SIZE, DAC_ALIGN_12B_R) != HAL_OK)
+	if (HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)uDAC_TEST, 1, DAC_ALIGN_12B_R) != HAL_OK)
   {
     /* Start DMA Error */
     Error_Handler();
   }
+
+	if (HAL_TIM_Base_Start(&htim15) != HAL_OK)
+  {
+    /* Counter Enable Error */
+    Error_Handler();
+  }
+//	
 	
 	int i=0;
   /* USER CODE END 2 */
@@ -162,13 +176,14 @@ int main(void)
   while (1)
   {
   /* USER CODE END WHILE */
-
+	
   /* USER CODE BEGIN 3 */
-		i++;
-		sprintf(kMsg,"A:%d, %d", aADCxConvertedValues[0], aADCxConvertedValues[1]);
+		uDAC_TEST[0] = i;
+		i+=10;
+		sprintf(kMsg,"A:%d\n", aADCxConvertedValues[0]);
 		if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
 		sprintf(tempMsg,"%d", i);
-		HAL_Delay(500);
+		HAL_Delay(100);
 		LCD_ClearDisplay(&lcd);
 		LCD_SetLocation(&lcd, 0, 0);
 		LCD_WriteString(&lcd, kMsg);
@@ -263,7 +278,12 @@ static void MX_NVIC_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle)
+{
+  // If enable DMA, just leave this commented.
+	/* Get the converted value of regular channel */
+  //uhADCxConvertedValue = HAL_ADC_GetValue(AdcHandle);
+}
 /* USER CODE END 4 */
 
 /**
