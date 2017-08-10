@@ -133,7 +133,10 @@ int main(void)
   MX_DAC_Init();
   MX_I2C1_Init();
   MX_TIM2_Init();
-	
+  MX_TIM17_Init();
+  MX_TIM15_Init();
+  MX_TIM3_Init();
+
   /* Initialize interrupts */
   MX_NVIC_Init();
 
@@ -240,7 +243,9 @@ void SystemClock_Config(void)
                               |RCC_OSCILLATORTYPE_HSI48;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
+  RCC_OscInitStruct.HSI14State = RCC_HSI14_ON;
   RCC_OscInitStruct.HSICalibrationValue = 16;
+  RCC_OscInitStruct.HSI14CalibrationValue = 16;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {

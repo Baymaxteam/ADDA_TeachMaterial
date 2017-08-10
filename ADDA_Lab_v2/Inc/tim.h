@@ -62,6 +62,9 @@
 /* USER CODE END Includes */
 
 extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim15;
+extern TIM_HandleTypeDef htim17;
 
 /* USER CODE BEGIN Private defines */
 
@@ -70,6 +73,9 @@ extern TIM_HandleTypeDef htim2;
 extern void _Error_Handler(char *, int);
 
 void MX_TIM2_Init(void);
+void MX_TIM3_Init(void);
+void MX_TIM15_Init(void);
+void MX_TIM17_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 void MX_TIM2_ReInit(uint16_t TIM_Prescaler ,uint16_t TIM_Period);
