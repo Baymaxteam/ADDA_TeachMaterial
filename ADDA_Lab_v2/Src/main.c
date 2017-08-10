@@ -59,6 +59,7 @@
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
 #include "key.h"
+#include "hd44780.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -80,6 +81,8 @@ static void MX_NVIC_Init(void);
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
+LCD_PCF8574_HandleTypeDef	lcd;
+
 uint16_t ADCReadings[2]; //ADC Readings
 uint16_t ADCReadings_Bitshift; //ADC Readings
 uint16_t ADCReadings_Filter; //ADC Readings
@@ -137,8 +140,23 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
 	
-	HAL_TIM_Base_Start_IT(&htim2);
-	 
+	//HAL_TIM_Base_Start_IT(&htim2);
+	
+	lcd.pcf8574.PCF_I2C_ADDRESS = 7;
+	lcd.pcf8574.PCF_I2C_TIMEOUT = 1000;
+	lcd.pcf8574.i2c.Instance = I2C1;
+	lcd.pcf8574.i2c.Init.Timing = 0x0000020B;
+	lcd.NUMBER_OF_LINES = NUMBER_OF_LINES_2;
+	lcd.type = TYPE0;
+	if(LCD_Init(&lcd)!=LCD_OK){
+		// error occured
+		while(1);
+	}
+	LCD_ClearDisplay(&lcd);
+	LCD_SetLocation(&lcd, 0, 0);
+	LCD_WriteString(&lcd, "pi:");
+	LCD_SetLocation(&lcd, 0, 1);
+	LCD_WriteString(&lcd, "e:");
 	
 	char kMsg[200];
 	uint8_t  Key_mode = 0;
