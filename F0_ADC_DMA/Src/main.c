@@ -5,41 +5,41 @@
   ******************************************************************************
   * This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
+  * USER CODE END. Other portions of this file, whether
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * Copyright (c) 2017 STMicroelectronics International N.V. 
+  * Copyright (c) 2017 STMicroelectronics International N.V.
   * All rights reserved.
   *
-  * Redistribution and use in source and binary forms, with or without 
+  * Redistribution and use in source and binary forms, with or without
   * modification, are permitted, provided that the following conditions are met:
   *
-  * 1. Redistribution of source code must retain the above copyright notice, 
+  * 1. Redistribution of source code must retain the above copyright notice,
   *    this list of conditions and the following disclaimer.
   * 2. Redistributions in binary form must reproduce the above copyright notice,
   *    this list of conditions and the following disclaimer in the documentation
   *    and/or other materials provided with the distribution.
-  * 3. Neither the name of STMicroelectronics nor the names of other 
-  *    contributors to this software may be used to endorse or promote products 
+  * 3. Neither the name of STMicroelectronics nor the names of other
+  *    contributors to this software may be used to endorse or promote products
   *    derived from this software without specific written permission.
-  * 4. This software, including modifications and/or derivative works of this 
+  * 4. This software, including modifications and/or derivative works of this
   *    software, must execute solely and exclusively on microcontroller or
   *    microprocessor devices manufactured by or for STMicroelectronics.
-  * 5. Redistribution and use of this software other than as permitted under 
-  *    this license is void and will automatically terminate your rights under 
-  *    this license. 
+  * 5. Redistribution and use of this software other than as permitted under
+  *    this license is void and will automatically terminate your rights under
+  *    this license.
   *
-  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS" 
-  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT 
-  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS"
+  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
   * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
-  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT 
+  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT
   * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
   * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
-  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
-  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
   * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
   * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
@@ -59,6 +59,7 @@
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
 #include "hd44780.h"
+#include "key.h"
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -66,7 +67,8 @@
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 char kMsg[200];
-char tempMsg[200];
+char tempMsg1[200];
+char tempMsg2[200];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -76,6 +78,18 @@ static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 
+uint16_t ADCReadings_Bitshift = 0; //ADC Readings
+uint16_t ADCReadings_Filter = 0; //ADC Readings
+
+uint8_t  Key_mode = 0;
+
+#define CLOCK_FREQ        48000000                    // 48M 
+#define TIM_20K_PERIOD    (CLOCK_FREQ/20000)          // 1000k/20k  = 50
+#define TIM_10K_PERIOD    (CLOCK_FREQ/10000)          // 1000k/10k  = 100
+#define TIM_5K_PERIOD     (CLOCK_FREQ/5000)           // 1000k/5k   = 200
+#define TIM_1K_PERIOD     (CLOCK_FREQ/1000)           // 1000k/1k   = 1000
+#define TIM_K5_PERIOD     (CLOCK_FREQ/500)            // 1000k/0.5k = 2000
+uint32_t TIM_prescale_setting = TIM_20K_PERIOD;
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -83,8 +97,11 @@ static void MX_NVIC_Init(void);
 /* Variable containing ADC conversions results */
 /* ADC parameters */
 #define ADCCONVERTEDVALUES_BUFFER_SIZE ((uint32_t)  1)    /* Size of array containing ADC converted values */
-__IO uint16_t   aADCxConvertedValues[ADCCONVERTEDVALUES_BUFFER_SIZE];
+__IO uint16_t aADCxConvertedValues[ADCCONVERTEDVALUES_BUFFER_SIZE];
 __IO uint16_t uDAC_TEST[1] = {0};
+
+
+#define LED_FLASH_COUNTER 1000
 /* USER CODE END 0 */
 
 int main(void)
@@ -100,7 +117,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-	LCD_PCF8574_HandleTypeDef	lcd;
+  LCD_PCF8574_HandleTypeDef lcd;
 
   /* USER CODE END Init */
 
@@ -108,10 +125,10 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-	// TIM2  --> Callback
-	// TIM3  --> ADC
-	// TIM15 --> DAC
-	
+  // TIM2  --> Callback
+  // TIM3  --> ADC
+  // TIM15 --> DAC
+
 
   /* USER CODE END SysInit */
 
@@ -131,18 +148,20 @@ int main(void)
   MX_NVIC_Init();
 
   /* USER CODE BEGIN 2 */
-	lcd.pcf8574.PCF_I2C_ADDRESS = 7;
-	lcd.pcf8574.PCF_I2C_TIMEOUT = 1000;
-	lcd.pcf8574.i2c.Instance = I2C1;
-	lcd.pcf8574.i2c.Init.Timing = 0x0000020B;
-	lcd.NUMBER_OF_LINES = NUMBER_OF_LINES_2;
-	lcd.type = TYPE0;
-	if(LCD_Init(&lcd)!=LCD_OK){
-		// error occured
-		while(1);
-	}
-	// Start ADC DMA
-	if (HAL_ADC_Start_DMA(&hadc, (uint32_t *)aADCxConvertedValues, ADCCONVERTEDVALUES_BUFFER_SIZE) != HAL_OK)
+//  lcd.pcf8574.PCF_I2C_ADDRESS = 7;
+//  lcd.pcf8574.PCF_I2C_TIMEOUT = 1000;
+//  lcd.pcf8574.i2c.Instance = I2C1;
+//  lcd.pcf8574.i2c.Init.Timing = 0x0000020B;
+//  lcd.NUMBER_OF_LINES = NUMBER_OF_LINES_2;
+//  lcd.type = TYPE0;
+//  if (LCD_Init(&lcd) != LCD_OK)
+//  {
+//    // error occured
+//    while (1);
+//  }
+	
+  // Start ADC DMA
+  if (HAL_ADC_Start_DMA(&hadc, (uint32_t *)aADCxConvertedValues, ADCCONVERTEDVALUES_BUFFER_SIZE) != HAL_OK)
   {
     /* Start Error */
     Error_Handler();
@@ -152,46 +171,85 @@ int main(void)
     /* Counter Enable Error */
     Error_Handler();
   }
-	
-	// Start DAC DMA
-	//if (HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)aADCxConvertedValues, ADCCONVERTEDVALUES_BUFFER_SIZE, DAC_ALIGN_12B_R) != HAL_OK)
-	if (HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)uDAC_TEST, 1, DAC_ALIGN_12B_R) != HAL_OK)
+
+  // Start DAC DMA
+  //if (HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)aADCxConvertedValues, ADCCONVERTEDVALUES_BUFFER_SIZE, DAC_ALIGN_12B_R) != HAL_OK)
+  if (HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t *)uDAC_TEST, 1, DAC_ALIGN_12B_R) != HAL_OK)
   {
     /* Start DMA Error */
     Error_Handler();
   }
 
-	if (HAL_TIM_Base_Start(&htim15) != HAL_OK)
+  if (HAL_TIM_Base_Start(&htim15) != HAL_OK)
   {
     /* Counter Enable Error */
     Error_Handler();
   }
-//	
-	
-	int i=0;
+//
+
+  uint16_t i = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-  /* USER CODE END WHILE */
-	
-  /* USER CODE BEGIN 3 */
-		uDAC_TEST[0] = i;
-		i+=10;
-		sprintf(kMsg,"A:%d\n", aADCxConvertedValues[0]);
-		if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
-		sprintf(tempMsg,"%d", i);
-		HAL_Delay(100);
-		LCD_ClearDisplay(&lcd);
-		LCD_SetLocation(&lcd, 0, 0);
-		LCD_WriteString(&lcd, kMsg);
-		LCD_SetLocation(&lcd, 0, 1);
-		LCD_WriteString(&lcd, tempMsg);
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-  }
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+    uDAC_TEST[0] = i;
+    i += 10;
+		if (i >= 4000 ){ i = 0;}
+		
+    sprintf(kMsg, "A:%d, %d, %d, %d M: %d %d %d %d\n", uDAC_TEST[0], aADCxConvertedValues[0], ADCReadings_Bitshift, ADCReadings_Filter,
+            Key_mode, ADC_Setting.ADC_clock, ADC_Setting.ADC_bit, ADC_Setting.ADC_filter);
+    // sprintf(kMsg, "A:%d\n", aADCxConvertedValues[0]);
+    if (hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
+		
+    sprintf(tempMsg1, "DAC: %d", uDAC_TEST[0]);
+		sprintf(tempMsg2, "ADC: %d", ADCReadings_Filter);
+    HAL_Delay(100);
+		
+//    LCD_ClearDisplay(&lcd);
+//    LCD_SetLocation(&lcd, 0, 0);
+//    LCD_WriteString(&lcd, tempMsg1);
+//    LCD_SetLocation(&lcd, 0, 1);
+//    LCD_WriteString(&lcd, tempMsg2);
+		
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+
   /* USER CODE END 3 */
+  // scan gpio and change adc timer clock
+    Key_mode = KEY_Scan(&ADC_Setting, 1);
+    if (Key_mode == KEY_CLOCK_PRES)
+    {
+      HAL_TIM_Base_Stop(&htim3);
+      // check ADC sample clock
+      switch (ADC_Setting.ADC_clock)
+      {
+      case (CLOCK_20K):
+        TIM_prescale_setting = TIM_20K_PERIOD;
+        break;
+      case (CLOCK_10K):
+        TIM_prescale_setting = TIM_10K_PERIOD;
+        break;
+      case (CLOCK_5K):
+        TIM_prescale_setting = TIM_5K_PERIOD;
+        break;
+      case (CLOCK_1K):
+        TIM_prescale_setting = TIM_1K_PERIOD;
+        break;
+      case (CLOCK_K5):
+        TIM_prescale_setting = TIM_K5_PERIOD;
+        break;
+      default:
+        break;
+      }
+      MX_TIM3_ReInit(TIM_prescale_setting);
+      HAL_TIM_Base_Start(&htim3);
+    }
+	}
+
 
 }
 
@@ -204,10 +262,10 @@ void SystemClock_Config(void)
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
   RCC_PeriphCLKInitTypeDef PeriphClkInit;
 
-    /**Initializes the CPU, AHB and APB busses clocks 
-    */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI|RCC_OSCILLATORTYPE_HSI14
-                              |RCC_OSCILLATORTYPE_HSI48;
+  /**Initializes the CPU, AHB and APB busses clocks
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI | RCC_OSCILLATORTYPE_HSI14
+                                     | RCC_OSCILLATORTYPE_HSI48;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.HSI14State = RCC_HSI14_ON;
@@ -219,10 +277,10 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Initializes the CPU, AHB and APB busses clocks 
-    */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1;
+  /**Initializes the CPU, AHB and APB busses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+                                | RCC_CLOCKTYPE_PCLK1;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI48;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -232,7 +290,7 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_I2C1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB | RCC_PERIPHCLK_I2C1;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
 
@@ -241,12 +299,12 @@ void SystemClock_Config(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-    /**Configure the Systick interrupt time 
-    */
-  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+  /**Configure the Systick interrupt time
+  */
+  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq() / 1000);
 
-    /**Configure the Systick 
-    */
+  /**Configure the Systick
+  */
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
 
   /* SysTick_IRQn interrupt configuration */
@@ -281,8 +339,11 @@ static void MX_NVIC_Init(void)
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle)
 {
   // If enable DMA, just leave this commented.
-	/* Get the converted value of regular channel */
+  /* Get the converted value of regular channel */
   //uhADCxConvertedValue = HAL_ADC_GetValue(AdcHandle);
+	
+  ADCReadings_Bitshift = ADC_Bitshift(&ADC_Setting, (uint16_t)aADCxConvertedValues[0]);
+  ADCReadings_Filter   = ADC_Filter_Output(&ADC_Setting , ADCReadings_Bitshift);
 }
 /* USER CODE END 4 */
 
@@ -295,10 +356,10 @@ void _Error_Handler(char * file, int line)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
-  while(1) 
+  while (1)
   {
   }
-  /* USER CODE END Error_Handler_Debug */ 
+  /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef USE_FULL_ASSERT
@@ -323,10 +384,10 @@ void assert_failed(uint8_t* file, uint32_t line)
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-*/ 
+*/
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
