@@ -220,7 +220,10 @@ int main(void)
 
   /* USER CODE END 3 */
   // scan gpio and change adc timer clock
-    Key_mode = KEY_Scan(&ADC_Setting, 1);
+		// KEY_Scan_Filter(&ADC_Setting, 1);
+    Key_mode = KEY_Scan_Clock(&ADC_Setting, 1);
+		KEY_Scan_Bit(&ADC_Setting, 1);
+		
     if (Key_mode == KEY_CLOCK_PRES)
     {
       HAL_TIM_Base_Stop(&htim3);
@@ -331,7 +334,7 @@ static void MX_NVIC_Init(void)
   HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
   /* USB_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(USB_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(USB_IRQn, 4, 0);
   HAL_NVIC_EnableIRQ(USB_IRQn);
 }
 

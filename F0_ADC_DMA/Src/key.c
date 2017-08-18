@@ -8,9 +8,10 @@
 //1，WKUP按下 WK_UP
 //注意此函数有响应优先级,KEY0>KEY1>KEY2>WK_UP!!
 
-uint8_t KEY_Scan(ADDA_Setting_t* ADCLab, uint8_t mode)
+uint8_t KEY_Scan_Clock(ADDA_Setting_t* ADCLab, uint8_t mode)
 {
     static uint8_t key_up = 1;   //按键松开标志
+		static uint8_t scan_type = 0;
     if (mode == 1) //支持连按
     {
         key_up = 1;
@@ -19,7 +20,6 @@ uint8_t KEY_Scan(ADDA_Setting_t* ADCLab, uint8_t mode)
     if (key_up && (KEY_CLOCK_20K_Pin == 1 || KEY_CLOCK_10K_Pin == 1 || KEY_CLOCK_5K_Pin == 1 || KEY_CLOCK_1K_Pin == 1 || KEY_CLOCK_K5_Pin == 1))
     {
         HAL_Delay(10);
-        key_up = 0;
 
         if (KEY_CLOCK_20K_Pin == 1)         ADCLab->ADC_clock = CLOCK_20K;
         else if (KEY_CLOCK_10K_Pin == 1)    ADCLab->ADC_clock = CLOCK_10K;
@@ -31,40 +31,58 @@ uint8_t KEY_Scan(ADDA_Setting_t* ADCLab, uint8_t mode)
 				if (ADCLab->ADC_clock != ADCLab->ADC_pre_clock){
 					ADCLab->ADC_clock_change = 1;
 					ADCLab->ADC_pre_clock = ADCLab->ADC_clock;
-					return KEY_CLOCK_PRES;
+					scan_type = KEY_CLOCK_PRES;
 				} 
-				else {
-					return 0;
-				}
         
     }
-    else if (key_up && (KEY_BIT8_Pin == 1 || KEY_BIT10_Pin == 1 || KEY_BIT12_Pin == 1 ))
-    {
-        HAL_Delay(10);
-        key_up = 0;
+    return scan_type;   //无按键按下
+}
 
+uint8_t KEY_Scan_Bit(ADDA_Setting_t* ADCLab, uint8_t mode)
+{
+    static uint8_t key_up = 1;   //按键松开标志
+		static uint8_t scan_type = 0;
+    if (mode == 1) //支持连按
+    {
+        key_up = 1;
+    }
+
+    if (key_up && (KEY_BIT8_Pin == 1 || KEY_BIT10_Pin == 1 || KEY_BIT12_Pin == 1 ))
+    {
+
+        HAL_Delay(10);
         if (KEY_BIT8_Pin == 1)              ADCLab->ADC_bit = BIT8;
         else if (KEY_BIT10_Pin == 1)        ADCLab->ADC_bit = BIT10;
         else if (KEY_BIT12_Pin == 1)        ADCLab->ADC_bit = BIT12;
-
-        return KEY_BIT_PRES;
+			
+				scan_type = KEY_BIT_PRES;
     }
-    else if (key_up && (KEY_FILTER_10K_Pin == 1 || KEY_FILTER_5K_Pin == 1 || KEY_FILTER_1K_Pin == 1))
+    return scan_type;   //无按键按下
+}
+
+uint8_t KEY_Scan_Filter(ADDA_Setting_t* ADCLab, uint8_t mode)
+{
+    static uint8_t key_up = 1;   //按键松开标志
+		static uint8_t scan_type = 0;
+    if (mode == 1) //支持连按
+    {
+        key_up = 1;
+    }
+
+   
+     if (key_up && (KEY_FILTER_10K_Pin == 1 || KEY_FILTER_5K_Pin == 1 || KEY_FILTER_1K_Pin == 1))
     {
         HAL_Delay(10);
-        key_up = 0;
 
         if (KEY_FILTER_10K_Pin == 1)        ADCLab->ADC_filter = FILTER_10K;
         else if (KEY_FILTER_5K_Pin == 1)    ADCLab->ADC_filter = FILTER_5K;
         else if (KEY_FILTER_1K_Pin == 1)    ADCLab->ADC_filter = FILTER_1K;
+				
+				scan_type = KEY_FILTER_PRES;
+    }
+		
 
-        return KEY_FILTER_PRES;
-    }
-    else
-    {
-        key_up = 1;
-    }
-    return 0;   //无按键按下
+    return scan_type;   //无按键按下
 }
 
 uint16_t ADC_Bitshift(ADDA_Setting_t* ADCLab, uint16_t adc_value)

@@ -66,7 +66,9 @@ static ADDA_Setting_t ADC_Setting =
 	  .ADC_clock_change   = 0
 };
 
-uint8_t KEY_Scan(ADDA_Setting_t* ADCLab, uint8_t mode);
+uint8_t KEY_Scan_Clock(ADDA_Setting_t* ADCLab, uint8_t mode);
+uint8_t KEY_Scan_Bit(ADDA_Setting_t* ADCLab, uint8_t mode);
+uint8_t KEY_Scan_Filter(ADDA_Setting_t* ADCLab, uint8_t mode);
 uint16_t ADC_Bitshift(ADDA_Setting_t* ADCLab, uint16_t adc_value);
 uint16_t ADC_Filter_Output(ADDA_Setting_t* ADCLab, uint16_t adc_value);
 float lowpass_filer(float input_X, float output_Y, float cutoff_frequency, float dt);
