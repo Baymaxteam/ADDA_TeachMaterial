@@ -220,7 +220,7 @@ int main(void)
 
   /* USER CODE END 3 */
   // scan gpio and change adc timer clock
-		// KEY_Scan_Filter(&ADC_Setting, 1);
+		KEY_Scan_Filter(&ADC_Setting, 1);
     Key_mode = KEY_Scan_Clock(&ADC_Setting, 1);
 		KEY_Scan_Bit(&ADC_Setting, 1);
 		
