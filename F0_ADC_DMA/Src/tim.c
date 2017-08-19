@@ -274,13 +274,13 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
 /* USER CODE BEGIN 1 */
 /* TIM2 init function */
-void MX_TIM3_ReInit(uint32_t TIM_Period)
+void MX_TIM3_ReInit(uint16_t TIM_Prescaler ,uint32_t TIM_Period)
 {
   TIM_ClockConfigTypeDef sClockSourceConfig;
   TIM_MasterConfigTypeDef sMasterConfig;
 
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 0;
+  htim3.Init.Prescaler = TIM_Prescaler - 1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = TIM_Period;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;

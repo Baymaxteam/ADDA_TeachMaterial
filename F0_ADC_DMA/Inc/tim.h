@@ -78,7 +78,7 @@ void MX_TIM15_Init(void);
 void MX_TIM17_Init(void);
 
 /* USER CODE BEGIN Prototypes */
-void MX_TIM3_ReInit(uint32_t TIM_Period);
+void MX_TIM3_ReInit(uint16_t TIM_Prescaler ,uint32_t TIM_Period);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

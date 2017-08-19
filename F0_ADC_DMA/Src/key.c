@@ -189,3 +189,27 @@ float lowpass_filer(float input_X, float output_Y, float cutoff_frequency, float
 			
     return (alpha * input_X + (1 - alpha) * output_Y);
 }
+
+
+
+// DAC
+uint16_t DAC_Bitshift(ADDA_Setting_t* ADCLab, uint16_t adc_value)
+{
+    uint16_t tmp = 0;
+
+    switch (ADCLab->ADC_bit)
+    {
+    case (BIT8):
+        tmp = adc_value << 4;
+        break;
+    case (BIT10):
+        tmp = adc_value << 2;
+        break;
+    case (BIT12):
+        tmp = adc_value;
+        break;
+    default:
+        break;
+    }
+    return tmp;
+}

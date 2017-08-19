@@ -94,16 +94,6 @@
           <Title>STM32F072-Discovery Web Page (STM32F072-Discovery)</Title>
           <Path>http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/LN1848/PF259724</Path>
         </Book>
-        <Book>
-          <Number>3</Number>
-          <Title>STM32 Nucleo board (NUCLEO-F072RB)</Title>
-          <Path>http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/LN1847/PF260003</Path>
-        </Book>
-        <Book>
-          <Number>4</Number>
-          <Title>STM32F072-Discovery Web Page (STM32F072-Discovery)</Title>
-          <Path>http://www.st.com/web/catalog/tools/FM116/SC959/SS1532/LN1848/PF259724</Path>
-        </Book>
       </Books>
       <DebugOpt>
         <uSim>0</uSim>

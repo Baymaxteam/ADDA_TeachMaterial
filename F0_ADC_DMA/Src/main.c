@@ -83,12 +83,14 @@ uint16_t ADCReadings_Filter = 0; //ADC Readings
 
 uint8_t  Key_mode = 0;
 
-#define CLOCK_FREQ        48000000                    // 48M 
-#define TIM_20K_PERIOD    (CLOCK_FREQ/20000)          // 1000k/20k  = 50
-#define TIM_10K_PERIOD    (CLOCK_FREQ/10000)          // 1000k/10k  = 100
-#define TIM_5K_PERIOD     (CLOCK_FREQ/5000)           // 1000k/5k   = 200
-#define TIM_1K_PERIOD     (CLOCK_FREQ/1000)           // 1000k/1k   = 1000
-#define TIM_K5_PERIOD     (CLOCK_FREQ/500)            // 1000k/0.5k = 2000
+#define CLOCK_FREQ          48000000                            // 48M 
+#define TIM_PRESCALER       48                                  // TIM_CLOCK = 48M/48 = 1M = 1000k
+#define TIM_CLOCK           (CLOCK_FREQ/TIM_PRESCALER)  				// 48M/48 = 1M = 1000k
+#define TIM_20K_PERIOD      (TIM_CLOCK/20000)                 	// 1000k/20k  = 50
+#define TIM_10K_PERIOD      (TIM_CLOCK/10000)                   // 1000k/10k  = 100
+#define TIM_5K_PERIOD       (TIM_CLOCK/5000)                		// 1000k/5k   = 200
+#define TIM_1K_PERIOD       (TIM_CLOCK/1000)                    // 1000k/1k   = 1000
+#define TIM_K5_PERIOD       (TIM_CLOCK/500)                     // 1000k/0.5k = 2000
 uint32_t TIM_prescale_setting = TIM_20K_PERIOD;
 /* USER CODE END PFP */
 
@@ -159,7 +161,7 @@ int main(void)
 //    // error occured
 //    while (1);
 //  }
-	
+//	
   // Start ADC DMA
   if (HAL_ADC_Start_DMA(&hadc, (uint32_t *)aADCxConvertedValues, ADCCONVERTEDVALUES_BUFFER_SIZE) != HAL_OK)
   {
@@ -197,9 +199,11 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    uDAC_TEST[0] = i;
-    i += 10;
-		if (i >= 4000 ){ i = 0;}
+//    uDAC_TEST[0] = i;
+//    i += 10;
+//		if (i >= 4000 ){ i = 0;}
+		
+// 		uDAC_TEST[0] = ADCReadings_Filter;
 		
     sprintf(kMsg, "A:%d, %d, %d, %d M: %d %d %d %d\n", uDAC_TEST[0], aADCxConvertedValues[0], ADCReadings_Bitshift, ADCReadings_Filter,
             Key_mode, ADC_Setting.ADC_clock, ADC_Setting.ADC_bit, ADC_Setting.ADC_filter);
@@ -226,7 +230,16 @@ int main(void)
 		
     if (Key_mode == KEY_CLOCK_PRES)
     {
-      HAL_TIM_Base_Stop(&htim3);
+//      HAL_TIM_Base_Stop(&htim3);
+//			HAL_TIM_Base_DeInit(&htim3);
+			
+			if (HAL_TIM_Base_Stop(&htim3) != HAL_OK){
+				Error_Handler();
+			}
+						
+			if (HAL_TIM_Base_DeInit(&htim3) != HAL_OK){
+				Error_Handler();
+			}
       // check ADC sample clock
       switch (ADC_Setting.ADC_clock)
       {
@@ -248,11 +261,14 @@ int main(void)
       default:
         break;
       }
-      MX_TIM3_ReInit(TIM_prescale_setting);
-      HAL_TIM_Base_Start(&htim3);
+			
+      MX_TIM3_ReInit((uint16_t)TIM_PRESCALER , (uint32_t)TIM_prescale_setting);
+			
+      if (HAL_TIM_Base_Start(&htim3) != HAL_OK){
+				Error_Handler();
+			}
     }
 	}
-
 
 }
 
@@ -347,6 +363,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle)
 	
   ADCReadings_Bitshift = ADC_Bitshift(&ADC_Setting, (uint16_t)aADCxConvertedValues[0]);
   ADCReadings_Filter   = ADC_Filter_Output(&ADC_Setting , ADCReadings_Bitshift);
+	uDAC_TEST[0] = DAC_Bitshift(&ADC_Setting, ADCReadings_Filter);
 }
 /* USER CODE END 4 */
 
