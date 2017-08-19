@@ -81,7 +81,10 @@ static void MX_NVIC_Init(void);
 uint16_t ADCReadings_Bitshift = 0; //ADC Readings
 uint16_t ADCReadings_Filter = 0; //ADC Readings
 
+
 uint8_t  Key_mode = 0;
+uint8_t  ADCReadings_Filter_ShowBit[8] = {0};
+uint16_t ADCReadings_tmp = 0;
 
 #define CLOCK_FREQ          48000000                            // 48M 
 #define TIM_PRESCALER       48                                  // TIM_CLOCK = 48M/48 = 1M = 1000k
@@ -113,7 +116,7 @@ int main(void)
 
   /* USER CODE END 1 */
 
-  /* MCU Configuration----------------------------------------------------------*/
+  /* MCU Configuration----------	-----------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
@@ -150,17 +153,17 @@ int main(void)
   MX_NVIC_Init();
 
   /* USER CODE BEGIN 2 */
-//  lcd.pcf8574.PCF_I2C_ADDRESS = 7;
-//  lcd.pcf8574.PCF_I2C_TIMEOUT = 1000;
-//  lcd.pcf8574.i2c.Instance = I2C1;
-//  lcd.pcf8574.i2c.Init.Timing = 0x0000020B;
-//  lcd.NUMBER_OF_LINES = NUMBER_OF_LINES_2;
-//  lcd.type = TYPE0;
-//  if (LCD_Init(&lcd) != LCD_OK)
-//  {
-//    // error occured
-//    while (1);
-//  }
+  lcd.pcf8574.PCF_I2C_ADDRESS = 7;
+  lcd.pcf8574.PCF_I2C_TIMEOUT = 1000;
+  lcd.pcf8574.i2c.Instance = I2C1;
+  lcd.pcf8574.i2c.Init.Timing = 0x0000020B;
+  lcd.NUMBER_OF_LINES = NUMBER_OF_LINES_2;
+  lcd.type = TYPE0;
+  if (LCD_Init(&lcd) != LCD_OK)
+  {
+    // error occured
+    while (1);
+  }
 //	
   // Start ADC DMA
   if (HAL_ADC_Start_DMA(&hadc, (uint32_t *)aADCxConvertedValues, ADCCONVERTEDVALUES_BUFFER_SIZE) != HAL_OK)
@@ -210,15 +213,25 @@ int main(void)
     // sprintf(kMsg, "A:%d\n", aADCxConvertedValues[0]);
     if (hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
 		
-    sprintf(tempMsg1, "DAC: %d", uDAC_TEST[0]);
-		sprintf(tempMsg2, "ADC: %d", ADCReadings_Filter);
-    HAL_Delay(100);
+		ADCReadings_tmp = ADCReadings_Filter;
+		for (i = 0; i < 8 ; i++){
 		
-//    LCD_ClearDisplay(&lcd);
-//    LCD_SetLocation(&lcd, 0, 0);
-//    LCD_WriteString(&lcd, tempMsg1);
-//    LCD_SetLocation(&lcd, 0, 1);
-//    LCD_WriteString(&lcd, tempMsg2);
+		ADCReadings_Filter_ShowBit[i] = (uint8_t) (ADCReadings_tmp >> i) & 1 ;
+	}
+		
+		
+    sprintf(tempMsg1, "DAC: %d", uDAC_TEST[0]);
+		sprintf(tempMsg2, "ADC: %d%d%d%d%d%d%d%d", ADCReadings_Filter_ShowBit[7],ADCReadings_Filter_ShowBit[6],ADCReadings_Filter_ShowBit[5],
+						ADCReadings_Filter_ShowBit[4],ADCReadings_Filter_ShowBit[3],ADCReadings_Filter_ShowBit[2],ADCReadings_Filter_ShowBit[1],
+						ADCReadings_Filter_ShowBit[0]);
+    HAL_Delay(500);
+		if (ADC_Setting.ADC_clock == CLOCK_20K && ADC_Setting.ADC_filter == FILTER_None){
+			LCD_ClearDisplay(&lcd);
+			LCD_SetLocation(&lcd, 0, 0);
+			LCD_WriteString(&lcd, tempMsg1);
+			LCD_SetLocation(&lcd, 0, 1);
+			LCD_WriteString(&lcd, tempMsg2);
+		}
 		
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 

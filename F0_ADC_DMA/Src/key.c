@@ -77,6 +77,7 @@ uint8_t KEY_Scan_Filter(ADDA_Setting_t* ADCLab, uint8_t mode)
         if (KEY_FILTER_10K_Pin == 1)        ADCLab->ADC_filter = FILTER_10K;
         else if (KEY_FILTER_5K_Pin == 1)    ADCLab->ADC_filter = FILTER_5K;
         else if (KEY_FILTER_1K_Pin == 1)    ADCLab->ADC_filter = FILTER_1K;
+				else 																ADCLab->ADC_filter = FILTER_None;
 				
 				scan_type = KEY_FILTER_PRES;
     }

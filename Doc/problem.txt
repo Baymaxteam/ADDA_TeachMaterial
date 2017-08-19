@@ -1,0 +1,7 @@
+soft i2c (kill?)
+WDG (kill?)
+
+step 3.Evaluate the ADC
+
+1. 8bit show ADC / 20kHz  -> 12bit 很陡
+2. VR 是否要用? 避免危險
