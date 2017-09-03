@@ -174,9 +174,6 @@ uint16_t ADC_Filter_Output(ADDA_Setting_t* ADCLab, uint16_t adc_value)
     }
     adc_value_Y = ADC_Output;
 
-//              sprintf(kMsg,"D:%f \n", timestamp);
-//          if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
-
     return (uint16_t)ADC_Output;
 }
 
@@ -186,9 +183,6 @@ float lowpass_filer(float input_X, float output_Y, float cutoff_frequency, float
 {
     float RC = CURT_OFF_FREQUENCY_TO_RC(cutoff_frequency);
     float alpha = dt / ( RC + dt );
-
-//  sprintf(kMsg,"F: %f %f %f\n", RC, alpha, dt);
-//          if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
 
     return (alpha * input_X + (1 - alpha) * output_Y);
 }

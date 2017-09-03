@@ -55,6 +55,7 @@ void DMA1_Channel2_3_IRQHandler(void);
 void ADC1_COMP_IRQHandler(void);
 void TIM2_IRQHandler(void);
 void TIM6_DAC_IRQHandler(void);
+void I2C1_IRQHandler(void);
 void USB_IRQHandler(void);
 
 #ifdef __cplusplus
