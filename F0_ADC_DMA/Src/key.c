@@ -11,7 +11,7 @@
 uint8_t KEY_Scan_Clock(ADDA_Setting_t* ADCLab, uint8_t mode)
 {
     static uint8_t key_up = 1;   //按键松开标志
-		static uint8_t scan_type = 0;
+    static uint8_t scan_type = 0;
     if (mode == 1) //支持连按
     {
         key_up = 1;
@@ -27,13 +27,14 @@ uint8_t KEY_Scan_Clock(ADDA_Setting_t* ADCLab, uint8_t mode)
         else if (KEY_CLOCK_1K_Pin == 1)     ADCLab->ADC_clock = CLOCK_1K;
         else if (KEY_CLOCK_K5_Pin == 1)     ADCLab->ADC_clock = CLOCK_K5;
 
-				// clock change , return 1
-				if (ADCLab->ADC_clock != ADCLab->ADC_pre_clock){
-					ADCLab->ADC_clock_change = 1;
-					ADCLab->ADC_pre_clock = ADCLab->ADC_clock;
-					scan_type = KEY_CLOCK_PRES;
-				} 
-        
+        // clock change , return 1
+        if (ADCLab->ADC_clock != ADCLab->ADC_pre_clock)
+        {
+            ADCLab->ADC_clock_change = 1;
+            ADCLab->ADC_pre_clock = ADCLab->ADC_clock;
+            scan_type = KEY_CLOCK_PRES;
+        }
+
     }
     return scan_type;   //无按键按下
 }
@@ -41,7 +42,7 @@ uint8_t KEY_Scan_Clock(ADDA_Setting_t* ADCLab, uint8_t mode)
 uint8_t KEY_Scan_Bit(ADDA_Setting_t* ADCLab, uint8_t mode)
 {
     static uint8_t key_up = 1;   //按键松开标志
-		static uint8_t scan_type = 0;
+    static uint8_t scan_type = 0;
     if (mode == 1) //支持连按
     {
         key_up = 1;
@@ -54,8 +55,8 @@ uint8_t KEY_Scan_Bit(ADDA_Setting_t* ADCLab, uint8_t mode)
         if (KEY_BIT8_Pin == 1)              ADCLab->ADC_bit = BIT8;
         else if (KEY_BIT10_Pin == 1)        ADCLab->ADC_bit = BIT10;
         else if (KEY_BIT12_Pin == 1)        ADCLab->ADC_bit = BIT12;
-			
-				scan_type = KEY_BIT_PRES;
+
+        scan_type = KEY_BIT_PRES;
     }
     return scan_type;   //无按键按下
 }
@@ -63,25 +64,26 @@ uint8_t KEY_Scan_Bit(ADDA_Setting_t* ADCLab, uint8_t mode)
 uint8_t KEY_Scan_Filter(ADDA_Setting_t* ADCLab, uint8_t mode)
 {
     static uint8_t key_up = 1;   //按键松开标志
-		static uint8_t scan_type = 0;
+    static uint8_t scan_type = 0;
     if (mode == 1) //支持连按
     {
         key_up = 1;
     }
+    // anyway, filter is close status at first
+    ADCLab->ADC_filter = FILTER_None;
 
-   
-     if (key_up && (KEY_FILTER_10K_Pin == 1 || KEY_FILTER_5K_Pin == 1 || KEY_FILTER_1K_Pin == 1))
+    if (key_up && (KEY_FILTER_10K_Pin == 1 || KEY_FILTER_5K_Pin == 1 || KEY_FILTER_1K_Pin == 1))
     {
         HAL_Delay(10);
 
         if (KEY_FILTER_10K_Pin == 1)        ADCLab->ADC_filter = FILTER_10K;
         else if (KEY_FILTER_5K_Pin == 1)    ADCLab->ADC_filter = FILTER_5K;
         else if (KEY_FILTER_1K_Pin == 1)    ADCLab->ADC_filter = FILTER_1K;
-				else 																ADCLab->ADC_filter = FILTER_None;
-				
-				scan_type = KEY_FILTER_PRES;
+        else                                ADCLab->ADC_filter = FILTER_None;
+
+        scan_type = KEY_FILTER_PRES;
     }
-		
+
 
     return scan_type;   //无按键按下
 }
@@ -127,7 +129,7 @@ uint16_t ADC_Filter_Output(ADDA_Setting_t* ADCLab, uint16_t adc_value)
     uint16_t ADC_Output = 0;
     float    timestamp = 0;
 
-	
+
     // check ADC sample clock
     switch (ADCLab->ADC_clock)
     {
@@ -163,18 +165,18 @@ uint16_t ADC_Filter_Output(ADDA_Setting_t* ADCLab, uint16_t adc_value)
     case (FILTER_1K):
         ADC_Output = lowpass_filer((float)adc_value, (float)adc_value_Y, CUT_FRQUENCY_1K, timestamp);
         break;
-		case (FILTER_None):
+    case (FILTER_None):
         ADC_Output = adc_value;
         break;
     default:
         break;
 
     }
-		adc_value_Y = ADC_Output;
-		
-//				sprintf(kMsg,"D:%f \n", timestamp);
-//			if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
-		
+    adc_value_Y = ADC_Output;
+
+//              sprintf(kMsg,"D:%f \n", timestamp);
+//          if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
+
     return (uint16_t)ADC_Output;
 }
 
@@ -182,12 +184,12 @@ uint16_t ADC_Filter_Output(ADDA_Setting_t* ADCLab, uint16_t adc_value)
 #define CURT_OFF_FREQUENCY_TO_RC(freq)    (1.0f / (2.0f * 3.14159f * freq))
 float lowpass_filer(float input_X, float output_Y, float cutoff_frequency, float dt)
 {
-		float RC = CURT_OFF_FREQUENCY_TO_RC(cutoff_frequency);
-    float alpha = dt / ( RC + dt );			
-	
-//	sprintf(kMsg,"F: %f %f %f\n", RC, alpha, dt);
-//			if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
-			
+    float RC = CURT_OFF_FREQUENCY_TO_RC(cutoff_frequency);
+    float alpha = dt / ( RC + dt );
+
+//  sprintf(kMsg,"F: %f %f %f\n", RC, alpha, dt);
+//          if(hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
+
     return (alpha * input_X + (1 - alpha) * output_Y);
 }
 

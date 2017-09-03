@@ -69,6 +69,8 @@
 char kMsg[200];
 char tempMsg1[200];
 char tempMsg2[200];
+char tempMsgStandby1[50];
+char tempMsgStandby2[50];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -85,13 +87,14 @@ uint16_t ADCReadings_Filter = 0; //ADC Readings
 uint8_t  Key_mode = 0;
 uint8_t  ADCReadings_Filter_ShowBit[8] = {0};
 uint16_t ADCReadings_tmp = 0;
+uint8_t  LCD_Reflash_flag = 0;
 
 #define CLOCK_FREQ          48000000                            // 48M 
 #define TIM_PRESCALER       48                                  // TIM_CLOCK = 48M/48 = 1M = 1000k
-#define TIM_CLOCK           (CLOCK_FREQ/TIM_PRESCALER)  				// 48M/48 = 1M = 1000k
-#define TIM_20K_PERIOD      (TIM_CLOCK/20000)                 	// 1000k/20k  = 50
+#define TIM_CLOCK           (CLOCK_FREQ/TIM_PRESCALER)          // 48M/48 = 1M = 1000k
+#define TIM_20K_PERIOD      (TIM_CLOCK/20000)                   // 1000k/20k  = 50
 #define TIM_10K_PERIOD      (TIM_CLOCK/10000)                   // 1000k/10k  = 100
-#define TIM_5K_PERIOD       (TIM_CLOCK/5000)                		// 1000k/5k   = 200
+#define TIM_5K_PERIOD       (TIM_CLOCK/5000)                    // 1000k/5k   = 200
 #define TIM_1K_PERIOD       (TIM_CLOCK/1000)                    // 1000k/1k   = 1000
 #define TIM_K5_PERIOD       (TIM_CLOCK/500)                     // 1000k/0.5k = 2000
 uint32_t TIM_prescale_setting = TIM_20K_PERIOD;
@@ -105,8 +108,6 @@ uint32_t TIM_prescale_setting = TIM_20K_PERIOD;
 __IO uint16_t aADCxConvertedValues[ADCCONVERTEDVALUES_BUFFER_SIZE];
 __IO uint16_t uDAC_TEST[1] = {0};
 
-
-#define LED_FLASH_COUNTER 1000
 /* USER CODE END 0 */
 
 int main(void)
@@ -116,7 +117,7 @@ int main(void)
 
   /* USER CODE END 1 */
 
-  /* MCU Configuration----------	-----------------------------------------------*/
+  /* MCU Configuration----------  -----------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
@@ -164,7 +165,10 @@ int main(void)
     // error occured
     while (1);
   }
-//	
+
+  sprintf(tempMsgStandby1, "ADC/DAC");
+  sprintf(tempMsgStandby2, "Teach Module");
+
   // Start ADC DMA
   if (HAL_ADC_Start_DMA(&hadc, (uint32_t *)aADCxConvertedValues, ADCCONVERTEDVALUES_BUFFER_SIZE) != HAL_OK)
   {
@@ -202,57 +206,70 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//    uDAC_TEST[0] = i;
-//    i += 10;
-//		if (i >= 4000 ){ i = 0;}
-		
-// 		uDAC_TEST[0] = ADCReadings_Filter;
-		
+
+    // USB display msg
     sprintf(kMsg, "A:%d, %d, %d, %d M: %d %d %d %d\n", uDAC_TEST[0], aADCxConvertedValues[0], ADCReadings_Bitshift, ADCReadings_Filter,
             Key_mode, ADC_Setting.ADC_clock, ADC_Setting.ADC_bit, ADC_Setting.ADC_filter);
-    // sprintf(kMsg, "A:%d\n", aADCxConvertedValues[0]);
     if (hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED) {CDC_Transmit_FS((uint8_t *)kMsg, strlen(kMsg));}
-		
-		ADCReadings_tmp = ADCReadings_Filter;
-		for (i = 0; i < 8 ; i++){
-		
-		ADCReadings_Filter_ShowBit[i] = (uint8_t) (ADCReadings_tmp >> i) & 1 ;
-	}
-		
-		
-    sprintf(tempMsg1, "DAC: %d", uDAC_TEST[0]);
-		sprintf(tempMsg2, "ADC: %d%d%d%d%d%d%d%d", ADCReadings_Filter_ShowBit[7],ADCReadings_Filter_ShowBit[6],ADCReadings_Filter_ShowBit[5],
-						ADCReadings_Filter_ShowBit[4],ADCReadings_Filter_ShowBit[3],ADCReadings_Filter_ShowBit[2],ADCReadings_Filter_ShowBit[1],
-						ADCReadings_Filter_ShowBit[0]);
-    HAL_Delay(500);
-		if (ADC_Setting.ADC_clock == CLOCK_20K && ADC_Setting.ADC_filter == FILTER_None){
-			LCD_ClearDisplay(&lcd);
-			LCD_SetLocation(&lcd, 0, 0);
-			LCD_WriteString(&lcd, tempMsg1);
-			LCD_SetLocation(&lcd, 0, 1);
-			LCD_WriteString(&lcd, tempMsg2);
-		}
-		
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 
-  /* USER CODE END 3 */
-  // scan gpio and change adc timer clock
-		KEY_Scan_Filter(&ADC_Setting, 1);
+    // prase adc value from bit by bit
+    ADCReadings_tmp = ADCReadings_Filter;
+    for (i = 0; i < 8 ; i++)
+    {
+      ADCReadings_Filter_ShowBit[i] = (uint8_t) (ADCReadings_tmp >> i) & 1 ;
+    }
+
+    // LCD display msg
+    sprintf(tempMsg1, "DAC: %d", uDAC_TEST[0]);
+    sprintf(tempMsg2, "ADC: %d%d%d%d%d%d%d%d", ADCReadings_Filter_ShowBit[7], ADCReadings_Filter_ShowBit[6], ADCReadings_Filter_ShowBit[5],
+            ADCReadings_Filter_ShowBit[4], ADCReadings_Filter_ShowBit[3], ADCReadings_Filter_ShowBit[2], ADCReadings_Filter_ShowBit[1],
+            ADCReadings_Filter_ShowBit[0]);
+    // only show LCD msg on clock = 20k and filter is none.
+    if (ADC_Setting.ADC_clock == CLOCK_20K && ADC_Setting.ADC_filter == FILTER_None)
+    {
+      LCD_ClearDisplay(&lcd);
+      LCD_SetLocation(&lcd, 0, 0);
+      LCD_WriteString(&lcd, tempMsg1);
+      LCD_SetLocation(&lcd, 0, 1);
+      LCD_WriteString(&lcd, tempMsg2);
+      LCD_Reflash_flag = 0;
+    }
+    else
+    {
+      if (LCD_Reflash_flag >= 10 || LCD_Reflash_flag == 0)
+      {
+        LCD_ClearDisplay(&lcd);
+        LCD_SetLocation(&lcd, 0, 0);
+        LCD_WriteString(&lcd, tempMsgStandby1);
+        LCD_SetLocation(&lcd, 0, 1);
+        LCD_WriteString(&lcd, tempMsgStandby2);
+        LCD_Reflash_flag = 0;
+      }
+      LCD_Reflash_flag ++;
+    }
+
+    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+    HAL_Delay(500);
+
+    /* USER CODE END 3 */
+    // scan gpio and change adc timer clock / bit / filter setting
     Key_mode = KEY_Scan_Clock(&ADC_Setting, 1);
-		KEY_Scan_Bit(&ADC_Setting, 1);
-		
+    KEY_Scan_Bit(&ADC_Setting, 1);
+    KEY_Scan_Filter(&ADC_Setting, 1);
+
+    // if change adc timer clock, stop and restart timer setting
     if (Key_mode == KEY_CLOCK_PRES)
     {
-//      HAL_TIM_Base_Stop(&htim3);
-//			HAL_TIM_Base_DeInit(&htim3);
-			
-			if (HAL_TIM_Base_Stop(&htim3) != HAL_OK){
-				Error_Handler();
-			}
-						
-			if (HAL_TIM_Base_DeInit(&htim3) != HAL_OK){
-				Error_Handler();
-			}
+
+      if (HAL_TIM_Base_Stop(&htim3) != HAL_OK)
+      {
+        Error_Handler();
+      }
+
+      if (HAL_TIM_Base_DeInit(&htim3) != HAL_OK)
+      {
+        Error_Handler();
+      }
       // check ADC sample clock
       switch (ADC_Setting.ADC_clock)
       {
@@ -274,14 +291,17 @@ int main(void)
       default:
         break;
       }
-			
+
       MX_TIM3_ReInit((uint16_t)TIM_PRESCALER , (uint32_t)TIM_prescale_setting);
-			
-      if (HAL_TIM_Base_Start(&htim3) != HAL_OK){
-				Error_Handler();
-			}
+
+      if (HAL_TIM_Base_Start(&htim3) != HAL_OK)
+      {
+        Error_Handler();
+      }
     }
-	}
+
+
+  } // while loop end
 
 }
 
@@ -368,15 +388,15 @@ static void MX_NVIC_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle)
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef * AdcHandle)
 {
   // If enable DMA, just leave this commented.
   /* Get the converted value of regular channel */
   //uhADCxConvertedValue = HAL_ADC_GetValue(AdcHandle);
-	
+
   ADCReadings_Bitshift = ADC_Bitshift(&ADC_Setting, (uint16_t)aADCxConvertedValues[0]);
   ADCReadings_Filter   = ADC_Filter_Output(&ADC_Setting , ADCReadings_Bitshift);
-	uDAC_TEST[0] = DAC_Bitshift(&ADC_Setting, ADCReadings_Filter);
+  uDAC_TEST[0] = DAC_Bitshift(&ADC_Setting, ADCReadings_Filter);
 }
 /* USER CODE END 4 */
 

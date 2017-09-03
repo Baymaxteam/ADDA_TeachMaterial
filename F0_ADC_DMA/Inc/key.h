@@ -44,26 +44,26 @@ enum ADC_filter_setting
     FILTER_10K  = 0,
     FILTER_5K   = 1,
     FILTER_1K   = 2,
-		FILTER_None = 3
+    FILTER_None = 3
 };
 
 typedef struct ADDA_Setting_s
 {
     uint8_t ADC_clock;
-		uint8_t ADC_pre_clock;
+    uint8_t ADC_pre_clock;
     uint8_t ADC_bit;
     uint8_t ADC_filter;
-		uint8_t ADC_clock_change;
+    uint8_t ADC_clock_change;
 
 } ADDA_Setting_t;
 
 static ADDA_Setting_t ADC_Setting =
 {
-    .ADC_clock  				= CLOCK_20K,
-	  .ADC_pre_clock  		= CLOCK_20K,
-    .ADC_bit    				= BIT12,
-    .ADC_filter 				= FILTER_None,
-	  .ADC_clock_change   = 0
+    .ADC_clock          = CLOCK_20K,
+    .ADC_pre_clock      = CLOCK_20K,
+    .ADC_bit            = BIT12,
+    .ADC_filter         = FILTER_None,
+    .ADC_clock_change   = 0
 };
 
 uint8_t KEY_Scan_Clock(ADDA_Setting_t* ADCLab, uint8_t mode);
