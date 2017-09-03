@@ -83,12 +83,12 @@ static void MX_NVIC_Init(void);
 uint16_t ADCReadings_Bitshift = 0; //ADC Readings
 uint16_t ADCReadings_Filter = 0; //ADC Readings
 
-
 uint8_t  Key_mode = 0;
 uint8_t  ADCReadings_Filter_ShowBit[8] = {0};
 uint16_t ADCReadings_tmp = 0;
 uint8_t  LCD_Reflash_flag = 0;
 
+// define timer clock setting
 #define CLOCK_FREQ          48000000                            // 48M 
 #define TIM_PRESCALER       48                                  // TIM_CLOCK = 48M/48 = 1M = 1000k
 #define TIM_CLOCK           (CLOCK_FREQ/TIM_PRESCALER)          // 48M/48 = 1M = 1000k
@@ -98,6 +98,8 @@ uint8_t  LCD_Reflash_flag = 0;
 #define TIM_1K_PERIOD       (TIM_CLOCK/1000)                    // 1000k/1k   = 1000
 #define TIM_K5_PERIOD       (TIM_CLOCK/500)                     // 1000k/0.5k = 2000
 uint32_t TIM_prescale_setting = TIM_20K_PERIOD;
+
+#define FW_VERSION           "v1.0"
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -155,7 +157,7 @@ int main(void)
 
   /* USER CODE BEGIN 2 */
   lcd.pcf8574.PCF_I2C_ADDRESS = 7;
-  lcd.pcf8574.PCF_I2C_TIMEOUT = 1000;
+  lcd.pcf8574.PCF_I2C_TIMEOUT = 10000;
   lcd.pcf8574.i2c.Instance = I2C1;
   lcd.pcf8574.i2c.Init.Timing = 0x0000020B;
   lcd.NUMBER_OF_LINES = NUMBER_OF_LINES_2;
@@ -165,7 +167,7 @@ int main(void)
     // error occured
     while (1);
   }
-
+  // default msg for LCD
   sprintf(tempMsgStandby1, "ADC/DAC");
   sprintf(tempMsgStandby2, "Teach Module");
 
@@ -236,6 +238,7 @@ int main(void)
     }
     else
     {
+      //show at first time and refresh after counting 10 tims.
       if (LCD_Reflash_flag >= 10 || LCD_Reflash_flag == 0)
       {
         LCD_ClearDisplay(&lcd);
