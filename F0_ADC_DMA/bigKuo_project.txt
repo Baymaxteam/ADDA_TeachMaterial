@@ -1,0 +1,77 @@
+Configuration	bigKuo_project
+STM32CubeMX 	4.22.0
+Date	09/07/2017
+MCU	STM32F072C8Tx
+
+
+
+PERIPHERALS	MODES	FUNCTIONS	PINS
+ADC	IN0	ADC_IN0	PA0
+DAC	DAC_OUT1	DAC_OUT1	PA4
+I2C1	I2C	I2C1_SCL	PB6
+I2C1	I2C	I2C1_SDA	PB7
+RCC	Crystal/Ceramic Resonator	RCC_OSC_IN	PF0-OSC_IN
+RCC	Crystal/Ceramic Resonator	RCC_OSC_OUT	PF1-OSC_OUT
+SYS	Serial_Wire	SYS_SWCLK	PA14
+SYS	Serial_Wire	SYS_SWDIO	PA13
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+TIM2	Internal Clock	TIM2_VS_ClockSourceINT	VP_TIM2_VS_ClockSourceINT
+TIM3	Internal Clock	TIM3_VS_ClockSourceINT	VP_TIM3_VS_ClockSourceINT
+TIM15	Internal Clock	TIM15_VS_ClockSourceINT	VP_TIM15_VS_ClockSourceINT
+TIM17	Enable_Timer	TIM17_VS_ClockSourceINT	VP_TIM17_VS_ClockSourceINT
+USB	Device (FS)	USB_DM	PA11
+USB	Device (FS)	USB_DP	PA12
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+2	PC13	GPIO_Output	
+5	PF0-OSC_IN	RCC_OSC_IN	
+6	PF1-OSC_OUT	RCC_OSC_OUT	
+10	PA0	ADC_IN0	
+14	PA4	DAC_OUT1	
+15	PA5	GPIO_Input	CLOCK_20K
+16	PA6	GPIO_Input	CLOCK_10K
+17	PA7	GPIO_Input	CLOCK_5K
+18	PB0	GPIO_Input	CLOCK_1K
+19	PB1	GPIO_Input	CLOCK_K5
+25	PB12	GPIO_Input	BIT8
+26	PB13	GPIO_Input	BIT10
+27	PB14	GPIO_Input	BIT12
+28	PB15	GPIO_Input	FILTER_10K
+29	PA8	GPIO_Input	FILTER_5K
+30	PA9	GPIO_Input	FILTER_1K
+32	PA11	USB_DM	
+33	PA12	USB_DP	
+34	PA13	SYS_SWDIO	
+37	PA14	SYS_SWCLK	
+42	PB6	I2C1_SCL	
+43	PB7	I2C1_SDA	
+
+
+
+SOFTWARE PROJECT
+
+Project Settings : 
+Project Name : bigKuo_project
+Project Folder : C:\Users\admin\Documents\GitSource\ADDA_TeachMaterial\F0_ADC_DMA
+Toolchain / IDE : MDK-ARM V5
+Firmware Package Name and Version : STM32Cube FW_F0 V1.8.0
+
+
+Code Generation Settings : 
+STM32Cube Firmware Library Package : Copy only the necessary library files
+Generate peripheral initialization as a pair of '.c/.h' files per peripheral : Yes
+Backup previously generated files when re-generating : No
+Delete previously generated files when not re-generated : Yes
+Set all free pins as analog (to optimize the power consumption) : No
+
+
+Toolchains Settings : 
+Compiler Optimizations : Balanced Size/Speed
+
+
+
+
+
+

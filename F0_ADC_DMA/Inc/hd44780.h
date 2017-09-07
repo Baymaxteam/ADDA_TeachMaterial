@@ -31,21 +31,24 @@
 
 /** LCD Interface possibilities
  */
-typedef enum{
+typedef enum
+{
 	PCF8574,	/*!< Use PCF8574 I2C IO expander as the interface */
 	GPIO		/*!< Use GPIO pins directly */
 } LCD_INTERFACE;
 
 /** Possible return values for the functions
  */
-typedef enum{
+typedef enum
+{
 	LCD_OK,		/*!< Everything went OK */
 	LCD_ERROR	/*!< An error occured */
 } LCD_RESULT;
 
 /** Type of hardware to use
  */
-typedef enum{
+typedef enum
+{
 	TYPE0,
 	TYPE1,
 	TYPE2
@@ -54,16 +57,18 @@ typedef enum{
 
 /** Number of lines on your LCD
  */
-typedef enum{
-	NUMBER_OF_LINES_1=0,
-	NUMBER_OF_LINES_2=1
+typedef enum
+{
+	NUMBER_OF_LINES_1 = 0,
+	NUMBER_OF_LINES_2 = 1
 } LCD_NUMBER_OF_LINES;
 
 /**
  * Structure that hold all the required variables in
  * order to simplify the communication process
  */
-typedef struct{
+typedef struct
+{
 	LCD_NUMBER_OF_LINES		NUMBER_OF_LINES;	/**< Number of lines on your LCD */
 	uint8_t 				D;
 	uint8_t 				C;
@@ -81,33 +86,37 @@ typedef struct{
 #define LCD_INTERFACE_SELECTOR			PCF8574
 
 /** Enumeration of the LCD pins */
-typedef enum{
-	LCD_PIN_D4=0,
-	LCD_PIN_D5=1,
-	LCD_PIN_D6=2,
-	LCD_PIN_D7=3,
-	LCD_PIN_RS=4,
-	LCD_PIN_RW=5,
-	LCD_PIN_E=6,
-	LCD_PIN_LED=7
+typedef enum
+{
+	LCD_PIN_D4 = 0,
+	LCD_PIN_D5 = 1,
+	LCD_PIN_D6 = 2,
+	LCD_PIN_D7 = 3,
+	LCD_PIN_RS = 4,
+	LCD_PIN_RW = 5,
+	LCD_PIN_E = 6,
+	LCD_PIN_LED = 7
 } LCD_PIN;
 
 /** Used to specify the direction in certain LCD operations */
-typedef enum{
-	DIRECTION_LEFT=0,
-	DIRECTION_RIGHT=1
+typedef enum
+{
+	DIRECTION_LEFT = 0,
+	DIRECTION_RIGHT = 1
 } LCD_DIRECTION;
 
 /**  */
-typedef enum{
-	DIRECTION_INCREMENT=1,
-	DIRECTION_DECREMENT=2
+typedef enum
+{
+	DIRECTION_INCREMENT = 1,
+	DIRECTION_DECREMENT = 2
 } LCD_DIRECTION_INC_DEC;
 
 /**  */
-typedef enum{
-	SHIFT_YES=1,
-	SHIFT_NO=0
+typedef enum
+{
+	SHIFT_YES = 1,
+	SHIFT_NO = 0
 } LCD_SHIFT;
 
 #if LCD_INTERFACE_SELECTOR==PCF8574
@@ -148,7 +157,7 @@ LCD_RESULT LCD_WriteDATA(LCD_PCF8574_HandleTypeDef* handle, uint8_t data);
  * @param	flag - a pointer to a variable that will contain the state of the flag
  * @return	whether the function was successful or not
  */
-LCD_RESULT LCD_GetBusyFlag(LCD_PCF8574_HandleTypeDef* handle,uint8_t* flag);
+LCD_RESULT LCD_GetBusyFlag(LCD_PCF8574_HandleTypeDef* handle, uint8_t* flag);
 
 /**
  * Writes lower 4bits of data to the data bus of the controller
@@ -218,7 +227,7 @@ LCD_RESULT LCD_CursorOFF(LCD_PCF8574_HandleTypeDef* handle);
  * @param	steps - specifies how many positions to shift the cursor by
  * @return	whether the function was successful or not
  */
-LCD_RESULT LCD_ShiftCursor(LCD_PCF8574_HandleTypeDef* handle, LCD_DIRECTION direction,uint8_t steps);
+LCD_RESULT LCD_ShiftCursor(LCD_PCF8574_HandleTypeDef* handle, LCD_DIRECTION direction, uint8_t steps);
 
 /**
  * Shifts the contents of the LCD
@@ -247,7 +256,7 @@ LCD_RESULT LCD_WriteFloat(LCD_PCF8574_HandleTypeDef* handle, double number, uint
  * @param	shift
  * @return	whether the function was successful or not
  */
-LCD_RESULT LCD_EntryModeSet(LCD_PCF8574_HandleTypeDef* handle, LCD_DIRECTION_INC_DEC direction,LCD_SHIFT shift);
+LCD_RESULT LCD_EntryModeSet(LCD_PCF8574_HandleTypeDef* handle, LCD_DIRECTION_INC_DEC direction, LCD_SHIFT shift);
 
 /**
  * Creates a custom character at the given address
@@ -256,7 +265,7 @@ LCD_RESULT LCD_EntryModeSet(LCD_PCF8574_HandleTypeDef* handle, LCD_DIRECTION_INC
  * @param	address - an address to which the character will be written
  * @return	whether the function was successful or not
  */
-LCD_RESULT LCD_CustomChar(LCD_PCF8574_HandleTypeDef* handle, uint8_t *pattern,uint8_t address);
+LCD_RESULT LCD_CustomChar(LCD_PCF8574_HandleTypeDef* handle, uint8_t *pattern, uint8_t address);
 
 /**
  * Writes the current state to the PCF8574 expander

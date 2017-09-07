@@ -6,41 +6,41 @@
   ******************************************************************************
   * This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether
+  * USER CODE END. Other portions of this file, whether 
   * inserted by the user or by software development tools
   * are owned by their respective copyright owners.
   *
-  * Copyright (c) 2017 STMicroelectronics International N.V.
+  * Copyright (c) 2017 STMicroelectronics International N.V. 
   * All rights reserved.
   *
-  * Redistribution and use in source and binary forms, with or without
+  * Redistribution and use in source and binary forms, with or without 
   * modification, are permitted, provided that the following conditions are met:
   *
-  * 1. Redistribution of source code must retain the above copyright notice,
+  * 1. Redistribution of source code must retain the above copyright notice, 
   *    this list of conditions and the following disclaimer.
   * 2. Redistributions in binary form must reproduce the above copyright notice,
   *    this list of conditions and the following disclaimer in the documentation
   *    and/or other materials provided with the distribution.
-  * 3. Neither the name of STMicroelectronics nor the names of other
-  *    contributors to this software may be used to endorse or promote products
+  * 3. Neither the name of STMicroelectronics nor the names of other 
+  *    contributors to this software may be used to endorse or promote products 
   *    derived from this software without specific written permission.
-  * 4. This software, including modifications and/or derivative works of this
+  * 4. This software, including modifications and/or derivative works of this 
   *    software, must execute solely and exclusively on microcontroller or
   *    microprocessor devices manufactured by or for STMicroelectronics.
-  * 5. Redistribution and use of this software other than as permitted under
-  *    this license is void and will automatically terminate your rights under
-  *    this license.
+  * 5. Redistribution and use of this software other than as permitted under 
+  *    this license is void and will automatically terminate your rights under 
+  *    this license. 
   *
-  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT
-  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+  * THIS SOFTWARE IS PROVIDED BY STMICROELECTRONICS AND CONTRIBUTORS "AS IS" 
+  * AND ANY EXPRESS, IMPLIED OR STATUTORY WARRANTIES, INCLUDING, BUT NOT 
+  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
   * PARTICULAR PURPOSE AND NON-INFRINGEMENT OF THIRD PARTY INTELLECTUAL PROPERTY
-  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT
+  * RIGHTS ARE DISCLAIMED TO THE FULLEST EXTENT PERMITTED BY LAW. IN NO EVENT 
   * SHALL STMICROELECTRONICS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
   * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
-  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, 
+  * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+  * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
   * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
   * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
@@ -76,15 +76,15 @@ void MX_I2C1_Init(void)
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  /**Configure Analogue filter
-  */
+    /**Configure Analogue filter 
+    */
   if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  /**Configure Digital filter
-  */
+    /**Configure Digital filter 
+    */
   if (HAL_I2CEx_ConfigDigitalFilter(&hi2c1, 0) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -96,66 +96,65 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
 {
 
   GPIO_InitTypeDef GPIO_InitStruct;
-  if (i2cHandle->Instance == I2C1)
+  if(i2cHandle->Instance==I2C1)
   {
-    /* USER CODE BEGIN I2C1_MspInit 0 */
+  /* USER CODE BEGIN I2C1_MspInit 0 */
 
-    /* USER CODE END I2C1_MspInit 0 */
-
-    /**I2C1 GPIO Configuration
+  /* USER CODE END I2C1_MspInit 0 */
+  
+    /**I2C1 GPIO Configuration    
     PB6     ------> I2C1_SCL
-    PB7     ------> I2C1_SDA
+    PB7     ------> I2C1_SDA 
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;
+    GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF1_I2C1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /* I2C1 clock enable */
     __HAL_RCC_I2C1_CLK_ENABLE();
-
-    /* USER CODE BEGIN I2C1_MspInit 1 */
-//    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;    //æ­¤è¡ŒåŽŸæœ‰
-//    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;   //GPIOé…ç½®ä¸ºè¾“å‡º
-//    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;         //å¼ºä¸Šæ‹‰
+  /* USER CODE BEGIN I2C1_MspInit 1 */
+//    GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_7;    //æ­¤è?Œå?Ÿæ??
+//    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;   //GPIO??ç½®ä¸ºè?“å‡º
+//    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;         //å¼ºä?Šæ??
 
 //    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-//    HAL_GPIO_WritePin(GPIOB, 6, GPIO_PIN_SET);       //æ‹‰é«˜SCL
-//    HAL_GPIO_WritePin(GPIOB, 7, GPIO_PIN_SET);       //æ‹‰é«˜SDA
+//    HAL_GPIO_WritePin(GPIOB, 6, GPIO_PIN_SET);       //??‰é?˜SCL
+//    HAL_GPIO_WritePin(GPIOB, 7, GPIO_PIN_SET);       //??‰é?˜SDA
 //
-//    hi2c1.Instance->CR1 = I2C_CR1_SWRST;         //å¤ä½I2CæŽ§åˆ¶å™¨
-//    hi2c1.Instance->CR1 = 0;             //è§£é™¤å¤ä½ï¼ˆä¸ä¼šè‡ªåŠ¨æ¸…é™¤ï¼‰
+//    hi2c1.Instance->CR1 = I2C_CR1_SWRST;         //å¤ä?I2C?Ž§?ˆ¶?™¨
+//    hi2c1.Instance->CR1 = 0;             //è§??™¤å¤ä?ï?ˆä?ä?šè‡ª?Š¨æ¸…é™¤ï¼?
 
-    /* USER CODE END I2C1_MspInit 1 */
+  /* USER CODE END I2C1_MspInit 1 */
   }
 }
 
 void HAL_I2C_MspDeInit(I2C_HandleTypeDef* i2cHandle)
 {
 
-  if (i2cHandle->Instance == I2C1)
+  if(i2cHandle->Instance==I2C1)
   {
-    /* USER CODE BEGIN I2C1_MspDeInit 0 */
+  /* USER CODE BEGIN I2C1_MspDeInit 0 */
 
-    /* USER CODE END I2C1_MspDeInit 0 */
+  /* USER CODE END I2C1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_I2C1_CLK_DISABLE();
-
-    /**I2C1 GPIO Configuration
+  
+    /**I2C1 GPIO Configuration    
     PB6     ------> I2C1_SCL
-    PB7     ------> I2C1_SDA
+    PB7     ------> I2C1_SDA 
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_6 | GPIO_PIN_7);
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_6|GPIO_PIN_7);
 
     /* I2C1 interrupt Deinit */
     HAL_NVIC_DisableIRQ(I2C1_IRQn);
-    /* USER CODE BEGIN I2C1_MspDeInit 1 */
+  /* USER CODE BEGIN I2C1_MspDeInit 1 */
 
-    /* USER CODE END I2C1_MspDeInit 1 */
+  /* USER CODE END I2C1_MspDeInit 1 */
   }
-}
+} 
 
 /* USER CODE BEGIN 1 */
 

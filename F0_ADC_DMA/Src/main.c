@@ -90,6 +90,7 @@ uint8_t  Key_mode = 0;
 uint8_t  ADCReadings_Filter_ShowBit[8] = {0};
 uint16_t ADCReadings_tmp = 0;
 uint8_t  LCD_Reflash_flag = 0;
+LCD_PCF8574_HandleTypeDef lcd;
 
 // define timer clock setting
 #define CLOCK_FREQ          48000000                            // 48M 
@@ -128,7 +129,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  LCD_PCF8574_HandleTypeDef lcd;
+
 
   /* USER CODE END Init */
 
@@ -150,12 +151,10 @@ int main(void)
   MX_ADC_Init();
   MX_DAC_Init();
   MX_I2C1_Init();
-  // IIC_Init();
   MX_TIM2_Init();
   MX_TIM17_Init();
   MX_TIM15_Init();
   MX_TIM3_Init();
-  delay_init(48);
 
   /* Initialize interrupts */
   MX_NVIC_Init();
@@ -172,7 +171,7 @@ int main(void)
     // error occured
     while (1);
   }
-  // while (PCF8574_Init()) //检测不到 PCF8574
+  // while (PCF8574_Init()) //�?测�?�到 PCF8574
   // {
   //   HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
   //   HAL_Delay(200);
@@ -207,7 +206,12 @@ int main(void)
     /* Counter Enable Error */
     Error_Handler();
   }
-//
+
+  if (HAL_TIM_Base_Start_IT(&htim2) != HAL_OK)
+  {
+    /* Starting Error */
+    Error_Handler();
+  }
 
   uint16_t i = 0;
   /* USER CODE END 2 */
@@ -237,32 +241,8 @@ int main(void)
     sprintf(tempMsg2, "ADC: %d%d%d%d%d%d%d%d", ADCReadings_Filter_ShowBit[7], ADCReadings_Filter_ShowBit[6], ADCReadings_Filter_ShowBit[5],
             ADCReadings_Filter_ShowBit[4], ADCReadings_Filter_ShowBit[3], ADCReadings_Filter_ShowBit[2], ADCReadings_Filter_ShowBit[1],
             ADCReadings_Filter_ShowBit[0]);
-    // only show LCD msg on clock = 20k and filter is none.
-    if (ADC_Setting.ADC_clock == CLOCK_20K && ADC_Setting.ADC_filter == FILTER_None)
-    {
-      LCD_ClearDisplay(&lcd);
-      LCD_SetLocation(&lcd, 0, 0);
-      LCD_WriteString(&lcd, tempMsg1);
-      LCD_SetLocation(&lcd, 0, 1);
-      LCD_WriteString(&lcd, tempMsg2);
-      LCD_Reflash_flag = 0;
-    }
-    else
-    {
-      //show at first time and refresh after counting 10 tims.
-      if (LCD_Reflash_flag >= 10 || LCD_Reflash_flag == 0)
-      {
-        LCD_ClearDisplay(&lcd);
-        LCD_SetLocation(&lcd, 0, 0);
-        LCD_WriteString(&lcd, tempMsgStandby1);
-        LCD_SetLocation(&lcd, 0, 1);
-        LCD_WriteString(&lcd, tempMsgStandby2);
-        LCD_Reflash_flag = 0;
-      }
-      LCD_Reflash_flag ++;
-    }
 
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+    // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
     HAL_Delay(500);
 
 
@@ -387,6 +367,9 @@ static void MX_NVIC_Init(void)
   /* I2C1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(I2C1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(I2C1_IRQn);
+  /* TIM2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(TIM2_IRQn);
   /* DMA1_Channel1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
@@ -396,9 +379,6 @@ static void MX_NVIC_Init(void)
   /* ADC1_COMP_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(ADC1_COMP_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
-  /* TIM2_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(TIM2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(TIM2_IRQn);
   /* TIM6_DAC_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(TIM6_DAC_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
@@ -418,6 +398,39 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef * AdcHandle)
   ADCReadings_Filter   = ADC_Filter_Output(&ADC_Setting , ADCReadings_Bitshift);
   uDAC_TEST[0] = DAC_Bitshift(&ADC_Setting, ADCReadings_Filter);
 }
+
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+
+  // only show LCD msg on clock = 20k and filter is none.
+  if (ADC_Setting.ADC_clock == CLOCK_20K && ADC_Setting.ADC_filter == FILTER_None)
+  {
+    LCD_ClearDisplay(&lcd);
+    LCD_SetLocation(&lcd, 0, 0);
+    LCD_WriteString(&lcd, tempMsg1);
+    LCD_SetLocation(&lcd, 0, 1);
+    LCD_WriteString(&lcd, tempMsg2);
+    LCD_Reflash_flag = 0;
+  }
+  else
+  {
+    //show at first time and refresh after counting 10 tims.
+    if (LCD_Reflash_flag >= 10 || LCD_Reflash_flag == 0)
+    {
+      LCD_ClearDisplay(&lcd);
+      LCD_SetLocation(&lcd, 0, 0);
+      LCD_WriteString(&lcd, tempMsgStandby1);
+      LCD_SetLocation(&lcd, 0, 1);
+      LCD_WriteString(&lcd, tempMsgStandby2);
+      LCD_Reflash_flag = 0;
+    }
+    LCD_Reflash_flag ++;
+  }
+
+}
+
 /* USER CODE END 4 */
 
 /**
