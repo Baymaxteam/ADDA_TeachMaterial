@@ -178,7 +178,7 @@ int main(void)
   // }
 
   // default msg for LCD
-  sprintf(tempMsgStandby1, "ADC/DAC");
+//  sprintf(tempMsgStandby1, "ADC/DAC");
   sprintf(tempMsgStandby2, "Teach Module");
 
   // Start ADC DMA
@@ -237,11 +237,13 @@ int main(void)
     }
 
     // LCD display msg
+		sprintf(tempMsgStandby1, "ADC/DAC %d %d %d", ADC_Setting.ADC_clock, ADC_Setting.ADC_bit, ADC_Setting.ADC_filter);
+
     sprintf(tempMsg1, "DAC: %d", uDAC_TEST[0]);
     sprintf(tempMsg2, "ADC: %d%d%d%d%d%d%d%d", ADCReadings_Filter_ShowBit[7], ADCReadings_Filter_ShowBit[6], ADCReadings_Filter_ShowBit[5],
             ADCReadings_Filter_ShowBit[4], ADCReadings_Filter_ShowBit[3], ADCReadings_Filter_ShowBit[2], ADCReadings_Filter_ShowBit[1],
             ADCReadings_Filter_ShowBit[0]);
-
+		
     // HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
     HAL_Delay(500);
 
